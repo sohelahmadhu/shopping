@@ -45,12 +45,21 @@ details{border-bottom:2px dotted var(--ink);padding:10px 0}summary{cursor:pointe
 </style><style id="custom"></style></head>
 <body><div id="app"></div>
 <script>
+/* FIREBASE SETUP: replace the PASTE_ values below with your Firebase web app config (see setup steps).
+   While these are unchanged, the site runs in local demo mode. */
+window.FIREBASE_CONFIG={apiKey:'AIzaSyAjtxCrq0dxRYmriGAe14SbpMEOup39lmo',authDomain:'shopping-site-76626.firebaseapp.com',projectId:'shopping-site-76626',storageBucket:'shopping-site-76626.firebasestorage.app',messagingSenderId:'956961714948',appId:'1:956961714948:web:90de3e984ffc5767689651',measurementId:'G-XR7E4HB13H'};
+/* After your first signup, paste your Firebase Authentication UID here.
+   The same UID must be added to firestore.rules and Cloudinary upload preset. */
+window.ADMIN_UID='PASTE_FIRST_ADMIN_UID';
+/* Cloudinary unsigned image uploads (no Firebase Storage / no Firebase billing). */
+window.CLOUDINARY_CONFIG={cloudName:'ezlquysw',uploadPreset:'resin_pop_products'};
+</script>
+<script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LS={g:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch(e){return d}},s:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){toast('Storage is full. Please use smaller images.')}}};
 const DS={name:'Resin Pop',logo:'🫧',tag:'Handcrafted resin art and gifts',h1:'Handcrafted resin art for everyday living',sub:'Each piece is poured, finished and cured by hand in small batches. No two are exactly alike.',ann:'A complimentary surprise gift may be included with your order',foot:'Handmade with care. All rights reserved.',cur:'₹',pay:'Payment on delivery (cash or UPI). We will contact you to confirm your order.',codes:'SPARKLE10=10\nPOPPY15=15\nGLOW5=5',c1:'#ff8fc7',c2:'#c9b6ff',c3:'#a8f0d8',bg:'#fff8fb',ink:'#2b1b3d',font:"'Fredoka'",r:22,motion:true,about:'We design and handcraft resin coasters, keychains, trays and gifts. Every item is made individually, so slight variations are part of its character.',story:'We are a small studio that designs and handcrafts resin art, including coasters, keychains, trays and gifts.\n\nEvery piece is poured, finished and cured by hand in small batches. Because each item is made individually, small variations in colour and pattern are part of its character.\n\nWe use quality resin and pigments, and we check every order before it ships.',values:'Handmade|Each item is poured and finished by hand, never mass produced.\nSmall batches|Limited runs keep quality high and designs unique.\nCustom orders|Contact us for personalised gifts and bulk orders.',email:'hello@example.com',phone:'+91 00000 00000',wa:'',insta:'',addr:'Delhi, India',hours:'Monday to Saturday, 10:00 am to 6:00 pm',faq:'How long does delivery take?|Orders are usually dispatched within 3 to 5 working days. Delivery time depends on your location.\nCan I order a custom design?|Yes. Please contact us with your idea, colours and deadline.\nHow should I care for resin products?|Wipe with a soft damp cloth. Avoid direct sunlight for long periods and very hot surfaces.\nWhich payment methods do you accept?|We currently accept cash or UPI on delivery.',ship:'Shipping: Orders are dispatched within 3 to 5 working days.\nReturns: If your item arrives damaged, contact us within 48 hours with photos and we will arrange a replacement.\nCustom orders cannot be returned.',css:''};
 const DP=[[1,'Ocean Wave Coaster','🌊',349,'Blue swirl design with a pearl-finish edge.','Bestseller'],[2,'Pressed Flower Keychain','🌸',199,'Real dried flowers preserved in clear resin.','New'],[3,'Glitter Moon Tray','🌙',599,'Glitter-finish tray for rings and small items.',''],[4,'Galaxy Bookmark','🪐',149,'Deep purple galaxy design with gold accents.','Limited'],[5,'Cloud Trinket Dish','☁️',299,'Cloud-pattern dish for rings and jewellery.',''],[6,'Heart Fridge Magnet','💖',129,'Pink and gold heart design with a strong magnet.','Gift pick']].map(a=>({id:a[0],name:a[1],emoji:a[2],price:a[3],desc:a[4],badge:a[5],show:true,img:''}));
 let S=LS.g('rp_site',null),P=LS.g('rp_prod',null),U=LS.g('rp_users',[{id:1,name:'Admin',email:'admin@shop.com',pass:'admin123',role:'admin'}]),O=LS.g('rp_orders',[]),cart=LS.g('rp_cart',[]),me=LS.g('rp_me',null),disc=LS.g('rp_disc',0),view='shop',tab='products',cartOpen=false,mode='in',ed=null,pimg='',gift=false;
-const sv=()=>{LS.s('rp_site',S);LS.s('rp_prod',P);LS.s('rp_users',U);LS.s('rp_orders',O);LS.s('rp_cart',cart);LS.s('rp_me',me);LS.s('rp_disc',disc)};
 const fmt=n=>S.cur+Math.round(n);
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
 function pop(e,n=22){if(!S.motion||matchMedia('(prefers-reduced-motion:reduce)').matches)return;const x=e&&e.clientX||innerWidth/2,y=e&&e.clientY||innerHeight/3,cl=[S.c1,S.c2,S.c3,'#ffe66d'];for(let i=0;i<n;i++){const s=document.createElement('i');s.className='cf';if(i%5==0)s.textContent=['✨','💖','🫧'][i%3];else s.style.background=cl[i%4];s.style.left=x+'px';s.style.top=y+'px';document.body.appendChild(s);const a=Math.random()*6.28,d=60+Math.random()*130;s.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d+90}px) rotate(${Math.random()*540}deg) scale(.4)`,opacity:0}],{duration:900+Math.random()*600,easing:'cubic-bezier(.2,.8,.3,1)'}).onfinish=()=>s.remove()}}
@@ -65,24 +74,19 @@ function qty(id,d){const c=cart.find(x=>x.id==id);c.q+=d;if(c.q<1)cart=cart.filt
 function sub(){return cart.reduce((a,c)=>{const p=P.find(x=>x.id==c.id);return a+(p?p.price*c.q:0)},0)}
 function cartHtml(){const t=sub(),d=t*disc/100;return `<aside class="drawer ${cartOpen?'open':''}"><div class="row"><h2>Your cart</h2><button class="gh sm" onclick="cartOpen=false;render()">Close</button></div>${cart.map(c=>{const p=P.find(x=>x.id==c.id);return p?`<div class="item"><span>${esc(p.emoji)} ${esc(p.name)}</span><span><button class="sm" onclick="qty(${p.id},-1)">-</button> ${c.q} <button class="sm" onclick="qty(${p.id},1)">+</button> ${fmt(p.price*c.q)}</span></div>`:''}).join('')||'<p>Your cart is empty.</p>'}${cart.length?`<label>Discount code</label><div class="row"><input id="cd" placeholder="SPARKLE10"><button class="sm lv" onclick="code()">Apply</button></div><p>Subtotal ${fmt(t)}${disc?`<br>Discount (${disc}%) -${fmt(d)}`:''}</p><h3>Total ${fmt(t-d)}</h3><label>Delivery address</label><textarea id="ad" rows="3">${esc(me?me.addr:'')}</textarea><p><small>${esc(S.pay)}</small></p><button class="pk" onclick="order(event)">Place order</button>`:''}</aside>`}
 function code(){const v=$('#cd').value.trim().toUpperCase(),l=S.codes.split('\n').map(x=>x.split('=')).find(x=>x[0].trim().toUpperCase()==v);disc=l?+l[1]||0:0;sv();toast(l?'Discount code applied.':'Invalid discount code.');render();cartOpen=true;render()}
-function order(e){if(!me){toast('Please log in or create an account to place your order.');cartOpen=false;mode='in';return go('auth')}const a=$('#ad').value.trim();if(!a)return toast('Please enter a delivery address.');const t=sub();O.unshift({id:Date.now(),uid:me.id,who:me.name,items:cart.map(c=>{const p=P.find(x=>x.id==c.id);return{n:p.name,q:c.q,p:p.price}}),total:t-t*disc/100,addr:a,status:'Placed',gift,date:new Date().toLocaleDateString()});cart=[];disc=0;gift=false;sv();pop(e,60);toast('Order placed successfully. Thank you for your purchase.');cartOpen=false;go('orders')}
 function auth(){return `<div class="panel" style="max-width:420px;margin:40px auto"><h2>${mode=='in'?'Log in':'Create your account'}</h2>${mode=='up'?'<label>Name</label><input id="an">':''}<label>Email</label><input id="ae" type="email"><label>Password</label><input id="ap" type="password"><button class="pk" onclick="${mode=='in'?'login()':'signup()'}">${mode=='in'?'Log in':'Create account'}</button> <button class="gh" onclick="mode='${mode=='in'?'up':'in'}';render()">${mode=='in'?'Create an account':'Back to log in'}</button></div>`}
-function login(){const u=U.find(x=>x.email==$('#ae').value.trim().toLowerCase()&&x.pass==$('#ap').value);if(!u)return toast('Incorrect email or password.');me=u;sv();toast('Welcome, '+u.name);go(u.role=='admin'?'admin':'shop')}
-function signup(){const n=$('#an').value.trim(),e=$('#ae').value.trim().toLowerCase(),p=$('#ap').value;if(!n||!e||p.length<6)return toast('Please enter your name, email and a password of at least 6 characters.');if(U.some(x=>x.email==e))return toast('This email is already registered.');me={id:Date.now(),name:n,email:e,pass:p,role:'user'};U.push(me);sv();pop();go('shop')}
-function logout(){me=null;sv();go('shop')}
 const FS=[['name','Shop name'],['logo','Logo emoji or letter'],['tag','Tagline'],['h1','Hero title'],['sub','Hero text'],['ann','Top announcement (empty hides it)'],['foot','Footer text'],['cur','Currency symbol'],['pay','Payment note at checkout'],['about','Short About text on home page (empty hides it)'],['story','Our story page text','t'],['values','About page highlights (Title|Text, one per line)','t'],['email','Contact email'],['phone','Contact phone'],['wa','WhatsApp number with country code'],['insta','Instagram username'],['addr','Business address'],['hours','Business hours'],['faq','FAQ (Question|Answer, one per line)','t'],['ship','Shipping and returns policy','t'],['codes','Discount codes (CODE=percent, one per line)','t'],['c1','Pink accent','c'],['c2','Lilac accent','c'],['c3','Mint accent','c'],['bg','Background','c'],['ink','Text and outlines','c'],['font','Heading font','f'],['r','Corner roundness','r'],['motion','Animations and confetti','b'],['css','Custom CSS (anything else, A to Z)','t']];
 function admin(){const T=['products','orders','site','users','data'];return `<h1>Admin</h1><div class="tabs">${T.map(t=>`<button class="tab ${tab==t?'on':''}" onclick="tab='${t}';ed=null;pimg='';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div>`+({products:aP,orders:aO,site:aS,users:aU,data:aD}[tab])()}
 function aP(){const e=P.find(x=>x.id==ed)||{};return `<div class="cols"><div class="panel"><h2>${ed?'Edit product':'New product'}</h2><label>Name</label><input id="pn" value="${esc(e.name)}"><label>Price</label><input id="pp" type="number" value="${e.price??''}"><label>Emoji (used when no photo)</label><input id="pe" value="${esc(e.emoji||'🫧')}"><label>Photo</label><input id="pf" type="file" accept="image/*" onchange="photo(this)"><label>Description</label><textarea id="pd" rows="2">${esc(e.desc)}</textarea><label>Badge (optional)</label><input id="pb" value="${esc(e.badge)}"><label><input id="ps" type="checkbox" ${e.show!==false?'checked':''}> Show in shop</label><br><button class="pk" onclick="saveP()">${ed?'Save changes':'Add product'}</button> ${ed?'<button class="gh" onclick="ed=null;render()">Cancel</button>':''}</div><div class="panel"><h2>Products (${P.length})</h2>${P.map(p=>`<div class="item"><span>${esc(p.emoji)} ${esc(p.name)} · ${fmt(p.price)}${p.show?'':' (hidden)'}</span><span><button class="sm" onclick="ed=${p.id};render()">Edit</button> <button class="sm pk" onclick="delP(${p.id})">Delete</button></span></div>`).join('')}</div></div>`}
-function photo(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,500/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);pimg=c.toDataURL('image/jpeg',.8);toast('Photo uploaded. Save the product to apply it.')};im.src=r.result};r.readAsDataURL(f)}
-function saveP(){const n=$('#pn').value.trim(),pr=+$('#pp').value;if(!n||!(pr>=0))return toast('Please enter a product name and price.');const o={name:n,price:pr,emoji:$('#pe').value||'🫧',desc:$('#pd').value,badge:$('#pb').value,show:$('#ps').checked};if(ed){const p=P.find(x=>x.id==ed);Object.assign(p,o);if(pimg)p.img=pimg}else P.push({id:Date.now(),img:pimg,...o});ed=null;pimg='';sv();pop();toast('Product saved.');render()}
-function delP(id){if(confirm('Delete this product?')){P=P.filter(x=>x.id!=id);cart=cart.filter(c=>c.id!=id);sv();render()}}
+function photo(i){
+  const f=i.files&&i.files[0]; if(!f)return;
+  if(!f.type.startsWith('image/')){toast('Please choose an image file.');i.value='';return}
+  if(f.size>5*1024*1024){toast('Please choose an image under 5 MB.');i.value='';return}
+  pimg=f;
+  toast('Image selected. It will upload to Cloudinary when you save the product.');
+}
 function aO(){return `<div class="panel"><h2>Orders (${O.length})</h2>${O.map(o=>`<div class="item"><span>#${String(o.id).slice(-5)} · ${esc(o.who)} · ${esc(o.date)}<br><small>${o.items.map(i=>esc(i.n)+' x'+i.q).join(', ')}${o.gift?' + complimentary gift':''}<br>${esc(o.addr)}</small></span><span>${fmt(o.total)}<br><select onchange="setSt(${o.id},this.value)">${['Placed','Packed','Shipped','Delivered','Cancelled'].map(s=>`<option ${s==o.status?'selected':''}>${s}</option>`).join('')}</select></span></div>`).join('')||'<p>No orders yet.</p>'}</div>`}
-function setSt(id,v){O.find(o=>o.id==id).status=v;sv();toast('Order status updated.')}
-function aS(){return `<div class="panel"><h2>Site settings</h2><div class="cols">${FS.map(([k,l,t])=>`<div style="${t=='t'?'grid-column:1/-1':''}"><label>${l}</label>${t=='t'?`<textarea id="s_${k}" rows="4">${esc(S[k])}</textarea>`:t=='c'?`<input id="s_${k}" type="color" value="${S[k]}">`:t=='b'?`<br><input id="s_${k}" type="checkbox" ${S[k]?'checked':''}>`:t=='r'?`<input id="s_${k}" type="range" min="0" max="40" value="${S[k]}">`:t=='f'?`<select id="s_${k}">${[['Fredoka',"'Fredoka'"],['Pacifico (script)',"'Pacifico'"],['Caveat (handwritten)',"'Caveat'"],['Nunito (plain)',"'Nunito'"]].map(([n,v])=>`<option value="${v}" ${S.font==v?'selected':''}>${n}</option>`).join('')}</select>`:`<input id="s_${k}" value="${esc(S[k])}">`}</div>`).join('')}</div><button class="pk" onclick="saveS()">Save site</button> <button class="gh" onclick="if(confirm('Reset all site settings?')){S={...DS};sv();render()}">Reset design</button></div>`}
-function saveS(){FS.forEach(([k,l,t])=>{const e=$('#s_'+k);S[k]=t=='b'?e.checked:t=='r'?+e.value:e.value});sv();pop();toast('Site settings saved.');render()}
-function aU(){return `<div class="panel"><h2>People (${U.length})</h2>${U.map(u=>`<div class="item"><span>${esc(u.name)} · ${esc(u.email)} · <b>${u.role}</b></span>${u.id==me.id?'<small>You</small>':`<span><button class="sm lv" onclick="role(${u.id})">Make ${u.role=='admin'?'user':'admin'}</button> <button class="sm pk" onclick="if(confirm('Remove this account?')){U=U.filter(x=>x.id!=${u.id});sv();render()}">Remove</button></span>`}</div>`).join('')}<p><small>Change your own password in My account. Default admin login is admin@shop.com / admin123, so change it first.</small></p></div>`}
-function role(id){const u=U.find(x=>x.id==id);u.role=u.role=='admin'?'user':'admin';sv();render()}
-function aD(){return `<div class="panel"><h2>Backup and publish</h2><p>Visitors on GitHub Pages see the site data stored in <b>site-data.json</b> next to this file. After editing here, download it and upload it to your repo to publish your changes to everyone.</p><button class="pk" onclick="dl()">Download site-data.json</button> <button class="lv" onclick="$('#imp').click()">Import a file</button><input id="imp" type="file" accept=".json" hidden onchange="imp(this)"></div>`}
+function aS(){return `<div class="panel"><h2>Site settings</h2><div class="cols">${FS.map(([k,l,t])=>`<div style="${t=='t'?'grid-column:1/-1':''}"><label>${l}</label>${t=='t'?`<textarea id="s_${k}" rows="4">${esc(S[k])}</textarea>`:t=='c'?`<input id="s_${k}" type="color" value="${S[k]}">`:t=='b'?`<br><input id="s_${k}" type="checkbox" ${S[k]?'checked':''}>`:t=='r'?`<input id="s_${k}" type="range" min="0" max="40" value="${S[k]}">`:t=='f'?`<select id="s_${k}">${[['Fredoka',"'Fredoka'"],['Pacifico (script)',"'Pacifico'"],['Caveat (handwritten)',"'Caveat'"],['Nunito (plain)',"'Nunito'"]].map(([n,v])=>`<option value="${v}" ${S.font==v?'selected':''}>${n}</option>`).join('')}</select>`:`<input id="s_${k}" value="${esc(S[k])}">`}</div>`).join('')}</div><button class="pk" onclick="saveS()">Save site</button> <button class="gh" onclick="resetS()">Reset design</button></div>`}
 function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({site:S,products:P},null,1)],{type:'application/json'}));a.download='site-data.json';a.click()}
 function imp(i){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);S={...DS,...d.site};P=d.products;sv();toast('Import complete.');render()}catch(e){toast('This file is not valid.')}};r.readAsText(i.files[0])}
 const lines=t=>String(t||'').split('\n').filter(x=>x.includes('|')).map(x=>x.split('|').map(y=>y.trim()));
@@ -95,6 +99,92 @@ function sendMsg(){const n=$('#cn').value.trim(),e=$('#ce').value.trim(),m=$('#c
 function faq(){return pg('Help and FAQ',`<div class="panel"><h2>Frequently asked questions</h2>${lines(S.faq).map(f=>`<details><summary>${esc(f[0])}</summary><p>${esc(f[1])}</p></details>`).join('')||'<p>No questions listed yet.</p>'}</div>${S.ship?`<div class="panel"><h2>Shipping and returns</h2><p style="white-space:pre-line">${esc(S.ship)}</p></div>`:''}<p style="text-align:center">Still need help? <button class="pk" onclick="go('contact')">Contact us</button></p>`)}
 function orders(){const mine=O.filter(o=>o.uid==me.id);return pg('My orders',mine.map(o=>{const i=STG.indexOf(o.status);return `<div class="panel"><div class="row"><b>Order #${String(o.id).slice(-5)}</b><span>${esc(o.date)}</span></div><p>${o.items.map(x=>esc(x.n)+' x'+x.q).join(', ')}${o.gift?' + complimentary gift':''}</p><p>Total: <b>${fmt(o.total)}</b><br><small>Delivering to: ${esc(o.addr)}</small></p>${i<0?`<span class="pill on">${esc(o.status)}</span>`:STG.map((x,k)=>`<span class="pill ${k<=i?'on':''}">${x}</span>`).join('')}</div>`}).join('')||`<div class="panel"><p>You have not placed any orders yet.</p><button class="pk" onclick="go('shop')">Start shopping</button></div>`)}
 function account(){return pg('My account',`<div class="cols"><div class="panel"><h2>Profile</h2><label>Name</label><input id="mn" value="${esc(me.name)}"><label>Email</label><input value="${esc(me.email)}" disabled><label>Phone</label><input id="mph" value="${esc(me.phone)}"><label>Default delivery address</label><textarea id="mad" rows="3">${esc(me.addr)}</textarea><button class="pk" onclick="saveMe()">Save details</button></div><div class="panel"><h2>Password</h2><label>New password (6+ characters)</label><input id="mp" type="password"><button onclick="saveMe()">Update password</button><hr><button class="lv" onclick="go('orders')">View my orders</button></div></div>`)}
-function saveMe(){me.name=$('#mn').value.trim()||me.name;me.phone=$('#mph').value.trim();me.addr=$('#mad').value.trim();if($('#mp').value.length>=6)me.pass=$('#mp').value;U=U.map(u=>u.id==me.id?me:u);sv();toast('Details saved.');render()}
-(async()=>{if(!S||!P){try{const d=await (await fetch('site-data.json',{cache:'no-store'})).json();S=S||{...DS,...d.site};P=P||d.products}catch(e){}}S={...DS,...S};P=P||DP;render()})();
+const cloud=()=>!!window.FB;
+const sv=()=>{LS.s('rp_cart',cart);LS.s('rp_disc',disc);if(cloud())return;LS.s('rp_site',S);LS.s('rp_prod',P);LS.s('rp_users',U);LS.s('rp_orders',O);LS.s('rp_me',me)};
+const fail=e=>{console.error(e);const c=(e&&e.code)||'';if(e&&e.message&&/Cloudinary|upload preset|upload failed|image upload/i.test(e.message)){toast(e.message);return}toast(/email-already/.test(c)?'This email is already registered.':/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c)?'Incorrect email or password.':/weak-password/.test(c)?'Please choose a stronger password (6+ characters).':/permission-denied/.test(c)?'Firebase permission denied. Check Firestore rules and your admin UID.':/requires-recent-login/.test(c)?'Please log out, log in again and retry.':'Something went wrong. Please try again.')};
+async function login(){const e=$('#ae').value.trim().toLowerCase(),p=$('#ap').value;if(cloud()){try{await FB.login(e,p)}catch(x){fail(x)}return}const u=U.find(x=>x.email==e&&x.pass==p);if(!u)return toast('Incorrect email or password.');me=u;sv();toast('Welcome, '+u.name);go(u.role=='admin'?'admin':'shop')}
+async function signup(){const n=$('#an').value.trim(),e=$('#ae').value.trim().toLowerCase(),p=$('#ap').value;if(!n||!e||p.length<6)return toast('Please enter your name, email and a password of at least 6 characters.');if(cloud()){try{await FB.signup(n,e,p);pop()}catch(x){fail(x)}return}if(U.some(x=>x.email==e))return toast('This email is already registered.');me={id:Date.now(),name:n,email:e,pass:p,role:'user'};U.push(me);sv();pop();go('shop')}
+function logout(){if(cloud()){FB.logout();O=[];U=[]}me=null;sv();go('shop')}
+async function saveMe(){const d={name:$('#mn').value.trim()||me.name,phone:$('#mph').value.trim(),addr:$('#mad').value.trim()},np=$('#mp').value;try{if(cloud()){await FB.setUser(me.id,d);if(np.length>=6)await FB.setPass(np);Object.assign(me,d)}else{Object.assign(me,d);if(np.length>=6)me.pass=np;U=U.map(u=>u.id==me.id?me:u);sv()}toast('Details saved.');render()}catch(x){fail(x)}}
+async function order(e){if(!me){toast('Please log in or create an account to place your order.');cartOpen=false;mode='in';return go('auth')}const a=$('#ad').value.trim();if(!a)return toast('Please enter a delivery address.');const t=sub(),o={uid:me.id,who:me.name,items:cart.filter(c=>P.find(x=>x.id==c.id)).map(c=>{const p=P.find(x=>x.id==c.id);return{n:p.name,q:c.q,p:p.price}}),total:t-t*disc/100,addr:a,status:'Placed',gift,date:new Date().toLocaleDateString()};try{if(cloud())await FB.set('orders',String(Date.now()),o);else O.unshift({id:Date.now(),...o})}catch(x){return fail(x)}cart=[];disc=0;gift=false;sv();pop(e,60);toast('Order placed successfully. Thank you for your purchase.');cartOpen=false;go('orders')}
+async function uploadProductImage(file){
+  const c=window.CLOUDINARY_CONFIG||{};
+  if(!c.cloudName||/^PASTE/.test(c.cloudName)||!c.uploadPreset||/^PASTE/.test(c.uploadPreset))
+    throw new Error('Cloudinary is not configured. Add your Cloud Name and unsigned Upload Preset.');
+  const body=new FormData();
+  body.append('file',file);
+  body.append('upload_preset',c.uploadPreset);
+  body.append('folder','resin-pop/products');
+  const endpoint='https://api.cloudinary.com/v1_1/'+encodeURIComponent(c.cloudName)+'/image/upload';
+  const res=await fetch(endpoint,{method:'POST',body});
+  const data=await res.json();
+  if(!res.ok||!data.secure_url) throw new Error(data.error?.message||'Cloudinary image upload failed. Check the upload preset.');
+  return data.secure_url;
+}
+async function saveP(){
+  const n=$('#pn').value.trim(),pr=+$('#pp').value;
+  if(!n||!(pr>=0))return toast('Please enter a product name and price.');
+  const o={name:n,price:pr,emoji:$('#pe').value||'🫧',desc:$('#pd').value,badge:$('#pb').value,show:$('#ps').checked};
+  const old=P.find(x=>x.id==ed),id=ed?String(ed):String(Date.now());
+  try{
+    if(cloud()){
+      if(pimg instanceof File) o.img=await uploadProductImage(pimg);
+      else o.img=(old?old.img:'')||'';
+      await FB.set('products',id,o);
+    }else{
+      o.img='';
+      if(old)Object.assign(old,o);else P.push({id:+id,...o});
+    }
+  }catch(x){return fail(x)}
+  ed=null;pimg='';sv();pop();toast('Product saved.');render();
+}
+async function delP(id){if(!confirm('Delete this product?'))return;try{if(cloud())await FB.del('products',String(id));else P=P.filter(x=>x.id!=id);cart=cart.filter(c=>c.id!=id);sv();render()}catch(x){fail(x)}}
+async function setSt(id,v){try{if(cloud())await FB.upd('orders',String(id),{status:v});else O.find(o=>o.id==id).status=v;sv();toast('Order status updated.')}catch(x){fail(x)}}
+async function saveS(){FS.forEach(([k,l,t])=>{const e=$('#s_'+k);S[k]=t=='b'?e.checked:t=='r'?+e.value:e.value});try{if(cloud())await FB.set('config','site',S);sv();pop();toast('Site settings saved.');render()}catch(x){fail(x)}}
+async function resetS(){if(!confirm('Reset all site settings?'))return;S={...DS};try{if(cloud())await FB.set('config','site',S);sv();render()}catch(x){fail(x)}}
+async function role(id){const u=U.find(x=>x.id==id),r=u.role=='admin'?'user':'admin';try{if(cloud())await FB.upd('users',String(id),{role:r});u.role=r;sv();render()}catch(x){fail(x)}}
+function aU(){return `<div class="panel"><h2>People (${U.length})</h2>${U.map(u=>`<div class="item"><span>${esc(u.name)} · ${esc(u.email)} · <b>${u.id===me.id?'admin': 'customer'}</b></span>${u.id===me.id?'<small>You</small>':''}</div>`).join('')||'<p>No customer accounts yet.</p>'}<p><small>Admin access is controlled by the Firebase UID configured by the site owner. Customer accounts cannot promote themselves.</small></p></div>`}
+function aD(){return cloud()?`<div class="panel"><h2>Cloud storage & backup</h2><p>Products, orders, customer profiles and site settings are synced through Firebase. Product photos are hosted by Cloudinary.</p><p><b>Your signed-in UID:</b><br><code>${esc(me.id)}</code></p><button class="pk" onclick="seed()">Add sample products</button> <button class="lv" onclick="dl()">Download backup</button><p><small>Keep this UID private. It is used to configure the store owner in Firebase Security Rules.</small></p></div>`:`<div class="panel"><h2>Demo mode</h2><p>Firebase is not connected. Add your Firebase web app config and deploy the supplied Firebase Security Rules to enable cloud sync.</p><button class="lv" onclick="dl()">Download backup</button></div>`}
+async function seed(){if(!confirm('Add the sample products to your shop?'))return;try{for(const p of DP){const {id,...d}=p;await FB.set('products',String(id),d)}toast('Sample products added.')}catch(x){fail(x)}}
+let un=[];
+const soft=()=>{const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;render()};
+async function loadMe(u){
+  let d=await FB.getUser(u.uid);
+  if(!d){
+    d={name:(u.email||'User').split('@')[0],email:u.email,role:'user',phone:'',addr:''};
+    await FB.setUser(u.uid,d);
+  }
+  const isAdmin=!!window.ADMIN_UID && u.uid===window.ADMIN_UID;
+  if(d.role!==(isAdmin?'admin':'user')) await FB.setUser(u.uid,{role:isAdmin?'admin':'user'});
+  return {...d,id:u.uid,role:isAdmin?'admin':'user',email:u.email||d.email||''};
+}
+function watch(){un.forEach(f=>f());un=[];O=[];U=[];if(!me)return;const so=a=>{O=a.sort((x,y)=>y.id-x.id);soft()};if(me.role=='admin')un.push(FB.watch('orders',so),FB.watch('users',a=>{U=a;soft()}));else un.push(FB.watch('orders',so,FB.where('uid','==',me.id)))}
+(async()=>{await new Promise(r=>window.FB_DONE?r():addEventListener('fbready',r));
+if(window.FB){S={...DS};P=[];U=[];O=[];me=null;render();
+FB.watchDoc('config','site',d=>{S={...DS,...(d||{})};soft()});
+FB.watch('products',a=>{P=a.map(x=>({show:true,img:'',...x})).sort((x,y)=>x.id-y.id);soft()});
+FB.authChange(async u=>{if(!u){me=null;watch();return soft()}try{me=await loadMe(u);watch();if(view=='auth')go(me.role=='admin'?'admin':'shop');else render()}catch(x){fail(x)}});return}
+if(window.FB_ERR)toast('Could not connect to the database. Showing demo mode.');
+if(!S||!P){try{const d=await (await fetch('site-data.json',{cache:'no-store'})).json();S=S||{...DS,...d.site};P=P||d.products}catch(e){}}S={...DS,...S};P=P||DP;render()})();
+</script>
+<script type="module">
+const B='https://www.gstatic.com/firebasejs/10.12.2/';
+try{const cfg=window.FIREBASE_CONFIG;
+if(cfg&&cfg.apiKey&&!/^PASTE/.test(cfg.apiKey)){
+const [A,Au,F]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+const app=A.initializeApp(cfg),auth=Au.getAuth(app),db=F.getFirestore(app),storage=St.getStorage(app),col=n=>F.collection(db,n),dc=(n,i)=>F.doc(db,n,i);
+window.FB={
+login:(e,p)=>Au.signInWithEmailAndPassword(auth,e,p),
+signup:async(n,e,p)=>{const c=await Au.createUserWithEmailAndPassword(auth,e,p);await F.setDoc(dc('users',c.user.uid),{name:n,email:e,role:'user',phone:'',addr:''});return c},
+logout:()=>Au.signOut(auth),
+setPass:p=>Au.updatePassword(auth.currentUser,p),
+authChange:cb=>Au.onAuthStateChanged(auth,cb),
+getUser:async id=>{const d=await F.getDoc(dc('users',id));return d.exists()?{...d.data(),id}:null},
+setUser:(id,d)=>F.setDoc(dc('users',id),d,{merge:true}),
+where:F.where,
+watch:(n,cb,...q)=>F.onSnapshot(q.length?F.query(col(n),...q):col(n),s=>cb(s.docs.map(d=>({...d.data(),id:d.id}))),e=>console.error(e)),
+watchDoc:(n,i,cb)=>F.onSnapshot(dc(n,i),d=>cb(d.exists()?d.data():null),e=>console.error(e)),
+set:(n,i,d)=>F.setDoc(dc(n,i),d),upd:(n,i,d)=>F.updateDoc(dc(n,i),d),del:(n,i)=>F.deleteDoc(dc(n,i))}}
+}catch(e){window.FB_ERR=e;console.error(e)}
+window.FB_DONE=true;dispatchEvent(new Event('fbready'));
 </script></body></html>
