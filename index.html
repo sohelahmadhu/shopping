@@ -172,7 +172,7 @@ const B='https://www.gstatic.com/firebasejs/10.12.2/';
 try{const cfg=window.FIREBASE_CONFIG;
 if(cfg&&cfg.apiKey&&!/^PASTE/.test(cfg.apiKey)){
 const [A,Au,F]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
-const app=A.initializeApp(cfg),auth=Au.getAuth(app),db=F.getFirestore(app),storage=St.getStorage(app),col=n=>F.collection(db,n),dc=(n,i)=>F.doc(db,n,i);
+const app=A.initializeApp(cfg),auth=Au.getAuth(app),db=F.getFirestore(app),col=n=>F.collection(db,n),dc=(n,i)=>F.doc(db,n,i);
 window.FB={
 login:(e,p)=>Au.signInWithEmailAndPassword(auth,e,p),
 signup:async(n,e,p)=>{const c=await Au.createUserWithEmailAndPassword(auth,e,p);await F.setDoc(dc('users',c.user.uid),{name:n,email:e,role:'user',phone:'',addr:''});return c},
